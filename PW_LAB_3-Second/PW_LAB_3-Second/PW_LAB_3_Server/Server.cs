@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading;
+using System.IO;
 
 namespace PW_LAB_3_Server
 {
@@ -17,12 +18,20 @@ namespace PW_LAB_3_Server
     {
         //pola prywatne
         private TcpListener serwer;
-        private TcpClient klient;
+        private TcpClient client;
+        private BinaryReader reader;
+        private BinaryWriter writer;
 
+        private Thread readerThread;
+        private Thread writerThread;
         public Server()
         {
             //CheckForIllegalCrossThreadCalls = false;// !!
             InitializeComponent();
+
+            // Adres ip v4 hosta
+            IPHostEntry adresyIP = Dns.GetHostEntry(Dns.GetHostName());
+            label3.Text = adresyIP.AddressList[1].ToString();
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -48,7 +57,10 @@ namespace PW_LAB_3_Server
                 serwer = new TcpListener(adresIP, port);
                 serwer.Start();
 
-                serwer.BeginAcceptTcpClient(new AsyncCallback(AcceptTcpClientCallback), serwer);
+                // Połączenie TCP
+                readerThread = new Thread(getThreadStart(false));
+                readerThread.Start();
+
             }
             catch (Exception ex)
             {
@@ -56,14 +68,34 @@ namespace PW_LAB_3_Server
             }
         }
 
-        private void AcceptTcpClientCallback(IAsyncResult asyncResult)
+        private ThreadStart getThreadStart(bool readerFALSE_writerTRUE)
         {
-            TcpListener s = (TcpListener)asyncResult.AsyncState;
-            klient = s.EndAcceptTcpClient(asyncResult);
-            SetListBoxText("Połączenie się powiodło!");
+            ThreadStart ts;
 
-            klient.Close();
-            serwer.Stop();
+            if (readerFALSE_writerTRUE == false)
+            {
+                ts = delegate()
+                {
+                    client = serwer.AcceptTcpClient();
+                    SetListBoxText("Połączenie się powiodło!");
+
+                    NetworkStream ns = client.GetStream();
+                    writer = new BinaryWriter(ns);
+                    reader = new BinaryReader(ns);
+                    // Odczyt w pętli nieskończonej
+                    while (true) SetListBoxText(reader.ReadString());
+                };
+            }
+            else
+            {
+                ts = delegate()
+                {
+                    writer.Write(textBox2.Text);
+
+                };
+            }
+
+            return ts;
         }
 
         /// <summary>
@@ -89,13 +121,21 @@ namespace PW_LAB_3_Server
             try
             {
                 serwer.Stop();
-                klient.Close();
-                listBox1.Items.Add("Zakończono pracę serwera ...");
+                //klient.Close();
+                SetListBoxText("Zakończono pracę serwera ...");
             }
             catch (Exception ex)
             {
                 listBox1.Items.Add(ex.ToString());
             }
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            SetListBoxText("[JA]: " + textBox2.Text);
+            writer.Write(textBox2.Text);
+            textBox2.Text = "";
+            //writerThread.Start();
         }
     }
 }
