@@ -495,6 +495,8 @@ namespace PW_LAB_3
             double[,] m2_3 = new double[512, 512];
             double[,] m2_4 = new double[512, 512];
 
+            Stopwatch sw = new Stopwatch();
+
             for (int i = 0; i < 1024; i++)
             {
                 for (int j = 0; j < 1024; j++)
@@ -527,31 +529,67 @@ namespace PW_LAB_3
             }
 
             SetListBoxText("Macierz podzielona, zaczynam wysyłać.", 5);
+            
             // Wysyłka macierzy na serwery
+            sw.Start();
+            this.sendMatrixToServer(m1_1, 1);
+            this.sendMatrixToServer(m2_1, 1);
+
+            this.sendMatrixToServer(m1_2, 2);
+            this.sendMatrixToServer(m2_2, 2);
+
+            this.sendMatrixToServer(m1_3, 3);
+            this.sendMatrixToServer(m2_3, 3);
+
+            this.sendMatrixToServer(m1_4, 4);
+            this.sendMatrixToServer(m2_4, 4);
+            sw.Stop();
+
+            SetListBoxText(String.Format("Do serwera jeden wysłane w czasie: {0}", sw.ElapsedMilliseconds.ToString()), 5);
+
+
+        }
+
+        private void sendMatrixToServer(double[,] matrix, int serverNum)
+        {
             try
             {
-                writer_1.Write("Start!");
-                SetListBoxText(getStringFromTab(m1_1), 5);
-                writer_1.Write(getStringFromTab(m1_1));
+                switch(serverNum)
+                {
+                    case 1:
+                        // Serwer 1
+                        writer_1.Write("Start wysyłki...");
+                        writer_1.Write(getStringFromTab(matrix));
+                        writer_1.Write(String.Format("Wysłano {0} elementów.", matrix.Length));
+                        break;
+
+                    case 2:
+                        // Serwer 2
+                        writer_2.Write("Start wysyłki...");
+                        writer_2.Write(getStringFromTab(matrix));
+                        writer_2.Write(String.Format("Wysłano {0} elementów.", matrix.Length));
+                        break;
+
+                    case 3:
+                        // Serwer 3
+                        writer_3.Write("Start wysyłki...");
+                        writer_3.Write(getStringFromTab(matrix));
+                        writer_3.Write(String.Format("Wysłano {0} elementów.", matrix.Length));
+                        break;
+
+                    case 4:
+                        // Serwer 4
+                        writer_4.Write("Start wysyłki...");
+                        writer_4.Write(getStringFromTab(matrix));
+                        writer_4.Write(String.Format("Wysłano {0} elementów.", matrix.Length));
+                        break;
+                }
+                
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 SetListBoxText(ex.ToString(), 5);
             }
-            //writer_1.Write("HEllo");
-            /*
-            writer_1.Write(getStringFromTab(m2_1));
-
-            writer_2.Write(getStringFromTab(m1_2));
-            writer_2.Write(getStringFromTab(m2_2));
-
-            writer_3.Write(getStringFromTab(m1_3));
-            writer_3.Write(getStringFromTab(m2_3));
-
-            writer_4.Write(getStringFromTab(m1_4));
-            writer_4.Write(getStringFromTab(m2_4));
-            */
-
         }
 
         public string getStringFromTab(double[,] tab)

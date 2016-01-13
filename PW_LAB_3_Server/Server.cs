@@ -31,7 +31,7 @@ namespace PW_LAB_3_Server
 
             // Adres ip v4 hosta
             IPHostEntry adresyIP = Dns.GetHostEntry(Dns.GetHostName());
-            label3.Text = adresyIP.AddressList[1].ToString();
+            label3.Text = adresyIP.AddressList[2].ToString();
         }
 
         private void button1_Click(object sender, EventArgs e)
