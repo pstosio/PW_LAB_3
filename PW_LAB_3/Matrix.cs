@@ -8,12 +8,12 @@ namespace PW_LAB_3
 {
     class Matrix
     {
-        public double[,] matrix;
+        public int[,] matrix;
         Random rand;
 
         public Matrix()
         {
-            this.matrix = new double[1024, 1024];
+            this.matrix = new int[1024, 1024];
         }
 
         public void drawNumbers()

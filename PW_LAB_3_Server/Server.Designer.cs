@@ -100,7 +100,7 @@
             this.listBox1.FormattingEnabled = true;
             this.listBox1.Location = new System.Drawing.Point(300, 37);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(265, 121);
+            this.listBox1.Size = new System.Drawing.Size(394, 121);
             this.listBox1.TabIndex = 5;
             // 
             // button2
@@ -115,10 +115,10 @@
             // 
             // textBox2
             // 
-            this.textBox2.Location = new System.Drawing.Point(119, 193);
+            this.textBox2.Location = new System.Drawing.Point(137, 193);
             this.textBox2.Multiline = true;
             this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(446, 23);
+            this.textBox2.Size = new System.Drawing.Size(557, 23);
             this.textBox2.TabIndex = 7;
             // 
             // button3
@@ -153,7 +153,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(610, 256);
+            this.ClientSize = new System.Drawing.Size(706, 256);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.button3);

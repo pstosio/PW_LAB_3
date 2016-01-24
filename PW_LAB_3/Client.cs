@@ -442,6 +442,7 @@ namespace PW_LAB_3
         }
         #endregion
 
+        #region Mnożenie lokalne macierzy
         private void button11_Click(object sender, EventArgs e)
         {
             Stopwatch sw = new Stopwatch();
@@ -451,11 +452,14 @@ namespace PW_LAB_3
             SetListBoxText("Mnożenie lokalnie..", 5);
             sw.Start();
 
-            for( int i=0; i < 1024; i++)
+            for( int i=0; i < 1024; i++) // wiersze
             {
-                for (int j=0; j < 1024; j++)
+                for (int j=0; j < 1024; j++) // kolumny
                 {
-                    tmpMatrix1[i, j] = matrix_1.matrix[j, i] * matrix_2.matrix[i, j]; 
+                    for (int k = 0; k < 1024; k++) // wiersze * kulmny w dannej iteracji
+                    {
+                        tmpMatrix1[i, j] += matrix_1.matrix[i, k] * matrix_2.matrix[k, j];
+                    }
                 }
             }
 
@@ -463,13 +467,17 @@ namespace PW_LAB_3
             {
                 for (int j = 0; j < 1024; j++)
                 {
-                    tmpMatrix2[i, j] = tmpMatrix1[j, i] * matrix_3.matrix[i, j];
+                    for (int k = 0; k < 1024; k++ )
+                    {
+                        tmpMatrix2[i, j] += tmpMatrix1[i, k] * matrix_3.matrix[k, j];
+                    }
                 }
             }
 
             sw.Stop();
             SetListBoxText("Policzone w czasie: " + sw.ElapsedMilliseconds + " ms.", 5);
         }
+        #endregion
 
         private void button15_Click(object sender, EventArgs e)
         {
@@ -485,103 +493,149 @@ namespace PW_LAB_3
              * 9. Po drodze mierzę czasy komunikacji
              */
 
-            double[,] m1_1 = new double[512, 512];
-            double[,] m1_2 = new double[512, 512];
-            double[,] m1_3 = new double[512, 512];
-            double[,] m1_4 = new double[512, 512];
+            int[,] m1_1 = new int[1024, 256];
+            int[,] m1_2 = new int[1024, 256];
+            int[,] m1_3 = new int[1024, 256];
+            int[,] m1_4 = new int[1024, 256];
 
-            double[,] m2_1 = new double[512, 512];
-            double[,] m2_2 = new double[512, 512];
-            double[,] m2_3 = new double[512, 512];
-            double[,] m2_4 = new double[512, 512];
+            int[,] m2_1 = new int[256, 1024];
+            int[,] m2_2 = new int[256, 1024];
+            int[,] m2_3 = new int[256, 1024];
+            int[,] m2_4 = new int[256, 1024];
 
             Stopwatch sw = new Stopwatch();
 
+
+            // Dzielenie pierwszej macierzy - pozioma [1024,256]
             for (int i = 0; i < 1024; i++)
             {
                 for (int j = 0; j < 1024; j++)
                 {
                     // Pierwsza ćwiartka macierzy
-                    if (i < 512 && j < 512)
+                    if (j < 256)
                     {
                         m1_1[i, j] = matrix_1.matrix[i, j];
-                        m2_1[i, j] = matrix_2.matrix[i, j];
                     }
                     // Druga ćwiartka macierzy
-                    else if (i >= 512 && j < 512)
+                    else if (j >= 256 && j < 512)
                     {
-                        m1_2[i - 512, j] = matrix_1.matrix[i, j];
-                        m2_2[i - 512, j] = matrix_2.matrix[i, j];
+                        m1_2[i, j - 256] = matrix_1.matrix[i, j];
                     }
                     // Trzecia ćwiartka macierzy
-                    else if (i < 512 && j >= 512)
+                    else if (j >= 512 && j < 768)
                     {
                         m1_3[i, j - 512] = matrix_1.matrix[i, j];
-                        m2_3[i, j - 512] = matrix_2.matrix[i, j];
                     }
                     // Czwarta ćwiartka macierzy
                     else
                     {
-                        m1_4[i - 512, j - 512] = matrix_1.matrix[i, j];
-                        m2_4[i - 512, j - 512] = matrix_2.matrix[i, j];
+                        m1_4[i, j - 768] = matrix_1.matrix[i, j];
                     }
                 }
             }
 
-            SetListBoxText("Macierz podzielona, zaczynam wysyłać.", 5);
+            // Dzielenie drugiej macierzy - pionowa [256, 1024]
+            for (int i = 0; i < 1024; i++)
+            {
+                for (int j = 0; j < 1024; j++)
+                {
+                    if (i < 256)
+                    {
+                        m2_1[i, j] = matrix_2.matrix[i, j];
+                    }
+                    else if (i >= 256 && i < 512)
+                    {
+                        m2_2[i - 256, j] = matrix_2.matrix[i, j];
+                    }
+                    else if (i >= 512 && i < 768)
+                    {
+                        m2_3[i - 512, j] = matrix_2.matrix[i, j];
+                    }
+                    else
+                        m2_4[i - 768, j] = matrix_2.matrix[i, j];
+                }
+            }
+
+            SetListBoxText("Macierze podzielone, zaczynam wysyłać.", 5);
             
-            // Wysyłka macierzy na serwery
-            sw.Start();
-            this.sendMatrixToServer(m1_1, 1);
-            this.sendMatrixToServer(m2_1, 1);
+            // Wysyłka macierzy na serwery w pomocnicznych wątkach
+            Thread sendThread_1 = new Thread (
+                () =>
+                {
+                    this.sendMatrixToServer(m1_1, 1, false, 1, "A");
+                    this.sendMatrixToServer(m2_1, 1, true, 1, "B");
+                });
+            sendThread_1.Start();
 
-            this.sendMatrixToServer(m1_2, 2);
-            this.sendMatrixToServer(m2_2, 2);
+            Thread sendThread_2 = new Thread(
+                () =>
+                {
+                    this.sendMatrixToServer(m1_2, 2, false, 2, "A");
+                    this.sendMatrixToServer(m2_2, 2, true, 2, "B");
+                });
 
-            this.sendMatrixToServer(m1_3, 3);
-            this.sendMatrixToServer(m2_3, 3);
+            sendThread_2.Start();
 
-            this.sendMatrixToServer(m1_4, 4);
-            this.sendMatrixToServer(m2_4, 4);
-            sw.Stop();
+            Thread sendThread_3 = new Thread(
+                () =>
+                {
+                    this.sendMatrixToServer(m1_3, 3, false, 3, "A");
+                    this.sendMatrixToServer(m2_3, 3, true, 3, "B");
+                });
 
-            SetListBoxText(String.Format("Do serwera jeden wysłane w czasie: {0}", sw.ElapsedMilliseconds.ToString()), 5);
+            sendThread_3.Start();
+
+            Thread sendThread_4 = new Thread(
+                () =>
+                {
+                    this.sendMatrixToServer(m1_4, 4, false, 4, "A");
+                    this.sendMatrixToServer(m2_4, 4, true, 4, "B");
+                });
+
+            sendThread_4.Start();
+
+            SetListBoxText(String.Format("Wysyłanie ćwiartek uruchomione"), 5);
 
 
         }
 
-        private void sendMatrixToServer(double[,] matrix, int serverNum)
+        private void sendMatrixToServer(int[,] matrix, int serverNum, bool poziomaPionowa, int numerCwiartki, string nazwaMacierzy)
         {
+            string czyPozioma = poziomaPionowa ? "0" : "1";
             try
             {
                 switch(serverNum)
                 {
                     case 1:
                         // Serwer 1
-                        writer_1.Write("Start wysyłki...");
-                        writer_1.Write(getStringFromTab(matrix));
-                        writer_1.Write(String.Format("Wysłano {0} elementów.", matrix.Length));
+                        SetListBoxText(String.Format("{0} Start wysyłki ćwiartki {1} macierzy {2}.", DateTime.Now, numerCwiartki, nazwaMacierzy), 1);
+                        writer_1.Write(getStringFromTab(matrix, poziomaPionowa));
+                        writer_1.Write(String.Format("{0} Odebrano macierz {1} ćwiartkę {2}.", DateTime.Now, nazwaMacierzy, numerCwiartki));
+                        //writer_1.Write("Licz"); // Polecenie
                         break;
 
                     case 2:
                         // Serwer 2
-                        writer_2.Write("Start wysyłki...");
-                        writer_2.Write(getStringFromTab(matrix));
-                        writer_2.Write(String.Format("Wysłano {0} elementów.", matrix.Length));
+                        SetListBoxText(String.Format("{0} Start wysyłki ćwiartki {1} macierzy {2}.", DateTime.Now, numerCwiartki, nazwaMacierzy), 2);
+                        writer_2.Write(getStringFromTab(matrix, poziomaPionowa));
+                        writer_2.Write(String.Format("{0} Odebrano macierz {1} ćwiartkę {2}.", DateTime.Now, nazwaMacierzy, numerCwiartki));
+                        //writer_2.Write("Licz"); // Polecenie
                         break;
 
                     case 3:
                         // Serwer 3
-                        writer_3.Write("Start wysyłki...");
-                        writer_3.Write(getStringFromTab(matrix));
-                        writer_3.Write(String.Format("Wysłano {0} elementów.", matrix.Length));
+                        SetListBoxText(String.Format("{0} Start wysyłki ćwiartki {1} macierzy {2}.", DateTime.Now, numerCwiartki, nazwaMacierzy), 3);
+                        writer_3.Write(getStringFromTab(matrix, poziomaPionowa));
+                        writer_3.Write(String.Format("{0} Odebrano macierz {1} ćwiartkę {2}.", DateTime.Now, nazwaMacierzy, numerCwiartki));
+                        //writer_3.Write("Licz"); // Polecenie
                         break;
 
                     case 4:
                         // Serwer 4
-                        writer_4.Write("Start wysyłki...");
-                        writer_4.Write(getStringFromTab(matrix));
-                        writer_4.Write(String.Format("Wysłano {0} elementów.", matrix.Length));
+                        SetListBoxText(String.Format("{0} Start wysyłki ćwiartki {1} macierzy {2}.", DateTime.Now, numerCwiartki, nazwaMacierzy), 4);
+                        writer_4.Write(getStringFromTab(matrix, poziomaPionowa));
+                        writer_4.Write(String.Format("{0} Odebrano macierz {1} ćwiartkę {2}.", DateTime.Now, nazwaMacierzy, numerCwiartki));
+                        //writer_4.Write("Licz"); // Polecenie
                         break;
                 }
                 
@@ -592,14 +646,26 @@ namespace PW_LAB_3
             }
         }
 
-        public string getStringFromTab(double[,] tab)
+        public string getStringFromTab(int[,] tab, bool poziomaTruePionowaFalse = true)
         {
-
-            for (int i = 0; i < 10; i++)
+            if (poziomaTruePionowaFalse == false)
             {
-                for (int j = 0; j < 512; j++)
+                for (int i = 0; i < 1024; i++)
                 {
-                    ret += tab[i, j].ToString();
+                    for (int j = 0; j < 256; j++)
+                    {
+                        ret += tab[i, j].ToString();
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < 256; i++)
+                {
+                    for (int j = 0; j < 1024; j++)
+                    {
+                        ret += tab[i, j].ToString();
+                    }
                 }
             }
 

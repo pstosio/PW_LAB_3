@@ -24,6 +24,10 @@ namespace PW_LAB_3_Server
 
         private Thread readerThread;
         private Thread writerThread;
+
+        private int[,] readedTab, readedTab_2, retTab;
+        string s, lastString;
+
         public Server()
         {
             //CheckForIllegalCrossThreadCalls = false;// !!
@@ -32,8 +36,11 @@ namespace PW_LAB_3_Server
             // Adres ip v4 hosta
             IPHostEntry adresyIP = Dns.GetHostEntry(Dns.GetHostName());
             label3.Text = adresyIP.AddressList[2].ToString();
+
+            readedTab = new int[1024, 1024];
         }
 
+        #region Start servera
         private void button1_Click(object sender, EventArgs e)
         {
             IPAddress adresIP;
@@ -67,7 +74,7 @@ namespace PW_LAB_3_Server
                 listBox1.Items.Add(String.Format("Błąd inicjacji serwera: {0}", ex.ToString()));
             }
         }
-
+        #endregion
         private ThreadStart getThreadStart(bool readerFALSE_writerTRUE)
         {
             ThreadStart ts;
@@ -80,10 +87,59 @@ namespace PW_LAB_3_Server
                     SetListBoxText("Połączenie się powiodło!");
 
                     NetworkStream ns = client.GetStream();
+                    
                     writer = new BinaryWriter(ns);
                     reader = new BinaryReader(ns);
+                    
                     // Odczyt w pętli nieskończonej
-                    while (true) SetListBoxText(reader.ReadString());
+                    while (true)
+                    {
+                        lastString = reader.ReadString();
+                        /*
+
+                        if (lastString.Substring(0, 3) == "0 W")
+                        {
+                            SetListBoxText(reader.ReadString());
+                            
+                            // "Rozkładanie" string do tablicy - przesłanej ćwiartki
+                            for(int i=0, j=0; i<s.Length; i++)
+                            {
+                                if (j == 256) j = 0;
+                                readedTab[i, j] = Convert.ToInt32( s.Substring(i, 1) );
+                                j++;
+                            }
+                        }
+
+                        else if (lastString.Substring(0, 3) == "1 W")
+                        {
+                            SetListBoxText(lastString);
+
+                            // "Rozkładanie" string do tablicy - przesłanej ćwiartki
+                            for (int i = 0, j = 0; i < s.Length; i++)
+                            {
+                                if ( i % 256 == 0) j ++;
+                                readedTab_2[i, j] = Convert.ToInt32(s.Substring(i, 1));
+                            }
+                        }
+
+                        if (lastString.Substring(0,4) == "Licz")
+                        {
+                            for(int i=0; i < 1024; i++)
+                            {
+                                for(int j=0; j<256; j++)
+                                {
+                                    for(int k=0; k < 1024; k++)
+                                    {
+                                        retTab[i,j] += readedTab[i, k] * readedTab_2[k, j];
+                                    }
+                                }
+                            }
+
+                            writer.Write(String.Format("Zwracam: {0}", this.getStringFromTab(retTab, false)));
+                        }
+                        */
+                        SetListBoxText(lastString);
+                    }
                 };
             }
             else
@@ -97,6 +153,7 @@ namespace PW_LAB_3_Server
 
             return ts;
         }
+      
 
         /// <summary>
         /// Obsługa list Boxa z poziomu wątku
@@ -135,7 +192,34 @@ namespace PW_LAB_3_Server
             SetListBoxText("[JA]: " + textBox2.Text);
             writer.Write(textBox2.Text);
             textBox2.Text = "";
-            //writerThread.Start();
+        }
+
+        private string getStringFromTab(int[,] tab, bool poziomaTruePionowaFalse)
+        {
+            string ret = "";
+
+            if (poziomaTruePionowaFalse == false)
+            {
+                for (int i = 0; i < 1024; i++)
+                {
+                    for (int j = 0; j < 256; j++)
+                    {
+                        ret += tab[i, j].ToString();
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < 256; i++)
+                {
+                    for (int j = 0; j < 1024; j++)
+                    {
+                        ret += tab[i, j].ToString();
+                    }
+                }
+            }
+
+            return ret;
         }
     }
 }
